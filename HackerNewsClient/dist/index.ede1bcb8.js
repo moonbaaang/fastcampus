@@ -140,12 +140,12 @@
       this[globalName] = mainExports;
     }
   }
-})({"2Oy1z":[function(require,module,exports) {
+})({"68uo8":[function(require,module,exports) {
 var HMR_HOST = null;
 var HMR_PORT = 1234;
 var HMR_SECURE = false;
 var HMR_ENV_HASH = "d751713988987e9331980363e24189ce";
-module.bundle.HMR_BUNDLE_ID = "9a8747a37b9fea714779c57267eac3d9";
+module.bundle.HMR_BUNDLE_ID = "c561a42b4daa4f6ffd630fa3ede1bcb8";
 // @flow
 /*global HMR_HOST, HMR_PORT, HMR_ENV_HASH, HMR_SECURE*/
 /*::
@@ -427,39 +427,47 @@ function hmrAcceptRun(bundle, id) {
   acceptedAssets[id] = true;
 }
 
-},{}],"5Q9Dw":[function(require,module,exports) {
+},{}],"01d61":[function(require,module,exports) {
 const container = document.getElementById('root');
-const ajax = new XMLHttpRequest(); // 다른 데이터로 변경 불가 (상수)
+const ajax = new XMLHttpRequest();
+// 다른 데이터로 변경 불가 (상수)
 const content = document.createElement('div');
-const NEWS_URL = 'https://api.hnpwa.com/v0/news/1.json'; // 바뀔 가능성이 있는 변수는 따로 빼주는게 좋음
-const CONTENT_URL = 'https://api.hnpwa.com/v0/item/@id.json'; //값을 확정할 수 없음
+const NEWS_URL = 'https://api.hnpwa.com/v0/news/1.json';
+// 바뀔 가능성이 있는 변수는 따로 빼주는게 좋음
+const CONTENT_URL = 'https://api.hnpwa.com/v0/item/@id.json';
+// 값을 확정할 수 없음
 const store = {
-    currentPage: 1,
-    lastPage: 0,
-    feeds: [],
+  currentPage: 1,
+  lastPage: 0,
+  feeds: []
+};
+function getData(url) {
+  ajax.open('GET', url, false);
+  ajax.send();
+  // 제네릭 : 반환 타입을 명확히 명시하기 위함
+  // > 입력이 n개의 유형일때 출력도 n개의 유형
+  // 함수명과 괄호 사이에 <T>로 명시, 또는 이름으로 명시
+  return JSON.parse(ajax.response);
 }
-
-
-function getData(url){
-    ajax.open('GET', url, false);
-    ajax.send();
-
-    return JSON.parse(ajax.response)
+function makeFeeds(feeds) {
+  for (let i = 0; i < feeds.length; i++) {
+    feeds[i].read = false;
+  }
+  return feeds;
 }
-
-function makeFeeds(feeds){
-    for (let i=0; i<feeds.length; i++){
-        feeds[i].read = false;
-    }
-    
-    return feeds
+function updateView(html) {
+  // 리턴이 없을 때 void
+  if (container != null) {
+    container.innerHTML = html;
+  } else {
+    console.error("최상위 컨테이너가 없어 UI를 진행하지 못합니다.");
+  }
 }
-
-
-function newsFeed(){
-    let newsFeed = store.feeds;
-    const newsList = [];
-    let template = `
+function newsFeed() {
+  // 입력은 없음
+  let newsFeed = store.feeds;
+  const newsList = [];
+  let template = `
     <div class="bg-gray-600 min-h-screen">
         <div class="bg-white text-xl">
             <div class="mx-auto px-4">
@@ -482,29 +490,13 @@ function newsFeed(){
             {{__news_feed__}}
         </div>
     </div>
-    `
-    /*                    
-    <div class="container mx-auto p-4">
-        <h1>Hacker News</h1>
-        <ul>
-            {{__news_feed__}}
-        </ul>
-        <div>
-            <a href="#/page/{{__prev_page__}}">이전페이지</a>
-            <a href="#/page/{{__next_page__}}">다음페이지</a>
-        </div>
-    </div>
-    */
-    // margin x - mx / padding - p
-    
-    if (newsFeed.length == 0){
-        newsFeed = store.feeds = makeFeeds(getData(NEWS_URL));
-    }
-
-    store.lastPage = newsFeed.length%10 == 0? newsFeed.length/10:newsFeed.length/10+1
-    
-    for(let i = (store.currentPage-1)*10 ; i < store.currentPage*10 ; i++){
-        newsList.push(`
+    `;
+  if (newsFeed.length == 0) {
+    newsFeed = store.feeds = makeFeeds(getData(NEWS_URL));
+  }
+  store.lastPage = newsFeed.length % 10 == 0 ? newsFeed.length / 10 : newsFeed.length / 10 + 1;
+  for (let i = (store.currentPage - 1) * 10; i < store.currentPage * 10; i++) {
+    newsList.push(`
             <div class="p-6 ${newsFeed[i].read ? 'bg-gray-500' : 'bg-white'} mt-6 rounded-lg shadow-md transition-colors duration-500 hover:bg-green-100">
                 <div class='flex'>
                     <div class='flex-auto'>
@@ -522,31 +514,25 @@ function newsFeed(){
                     </div>
                 </div>
             </div>
-        `);             
-    }
-
-    /*
-        <li>
-            <a href='#/show/${newsFeed[i].id}'>
-                ${newsFeed[i].title} (${newsFeed[i].comments_count})
-            </a>
-        </li>
-    */
-    
-    template = template.replace('{{__news_feed__}}', newsList.join(''))
-    template = template.replace('{{__prev_page__}}', store.currentPage > 1 ? store.currentPage - 1 : 1)
-    template = template.replace('{{__next_page__}}',
-        store.currentPage < store.lastPage ? store.currentPage + 1 : store.lastPage)
-
-    container.innerHTML = template
+        `);
+  }
+  /*
+  <li>
+  <a href='#/show/${newsFeed[i].id}'>
+  ${newsFeed[i].title} (${newsFeed[i].comments_count})
+  </a>
+  </li>
+  */
+  template = template.replace('{{__news_feed__}}', newsList.join(''));
+  template = template.replace('{{__prev_page__}}', String(store.currentPage > 1 ? store.currentPage - 1 : 1));
+  template = template.replace('{{__next_page__}}', String(store.currentPage < store.lastPage ? store.currentPage + 1 : store.lastPage));
+  updateView(template);
 }
-
-
-function newsDetail(){
-    const id = location.hash.substr(7); // 1부터 반환
-    const newsContent = getData(CONTENT_URL.replace('@id', id))
-
-    let template = `
+function newsDetail() {
+  const id = location.hash.substr(7);
+  // 1부터 반환
+  const newsContent = getData(CONTENT_URL.replace('@id', id));
+  let template = `
     <div class="bg-gray-600 min-h-screen pb-8">
         <div class="bg-white text-xl">
             <div class="mx-auto px-4">
@@ -572,61 +558,48 @@ function newsDetail(){
             {{__comments__}}
         </div>
     <div>
-    `
-
-    for (let i=0; i< store.feeds.length; i++){
-        if(store.feeds[i].id === Number(id)){
-            store.feeds[i].read = true;
-            break;
-        }
+    `;
+  for (let i = 0; i < store.feeds.length; i++) {
+    if (store.feeds[i].id === Number(id)) {
+      store.feeds[i].read = true;
+      break;
     }
-
-    function makeComment(comments, called = 0){
-        const commentString = [];
-
-        for(let i=0 ; i < comments.length; i++){
-            commentString.push(`
-                <div style="padding-left: ${called * 40}px;" class="mt-4">
-                    <div class="text-gray-400">
-                        <i class="fa fa-sort-up mr-2"></i>
-                        <strong>${comments[i].user}</strong> ${comments[i].time_ago}
-                    </div>
-                    <p class="text-gray-700">${comments[i].content}</p>
-                </div>
-            `);
-
-            if (comments[i].comments.length > 0){
-                commentString.push(makeComment(comments[i].comments, called + 1));
-            }
-        }
-
-        return commentString.join("")
-    }
-
-    container.innerHTML = template.replace('{{__comments__}}', makeComment(newsContent.comments));
+  }
+  updateView(template.replace('{{__comments__}}', makeComment(newsContent.comments)));
 }
-
-function router(){
-    const routePath = location.hash;
-
-    if (routePath == ''){
-        newsFeed()
-    } else if(routePath.indexOf('#/page/')>=0) {
-        store.currentPage = Number(routePath.substr(7));
-        newsFeed()
-    } else {
-        newsDetail()
+function makeComment(comments) {
+  const commentString = [];
+  for (let i = 0; i < comments.length; i++) {
+    const comment = comments[i];
+    commentString.push(`
+          <div style="padding-left: ${comment.level * 40}px;" class="mt-4">
+              <div class="text-gray-400">
+                  <i class="fa fa-sort-up mr-2"></i>
+                  <strong>${comment.user}</strong> ${comment.time_ago}
+              </div>
+              <p class="text-gray-700">${comment.content}</p>
+          </div>
+      `);
+    if (comment.comments.length > 0) {
+      commentString.push(makeComment(comment.comments));
     }
+  }
+  return commentString.join("");
 }
-
+function router() {
+  const routePath = location.hash;
+  if (routePath == '') {
+    newsFeed();
+  } else if (routePath.indexOf('#/page/') >= 0) {
+    store.currentPage = Number(routePath.substr(7));
+    newsFeed();
+  } else {
+    newsDetail();
+  }
+}
 window.addEventListener('hashchange', router);
-
 router();
 
+},{}]},["68uo8","01d61"], "01d61", "parcelRequire23ee")
 
-
-
-
-},{}]},["2Oy1z","5Q9Dw"], "5Q9Dw", "parcelRequire23ee")
-
-//# sourceMappingURL=index.67eac3d9.js.map
+//# sourceMappingURL=index.ede1bcb8.js.map

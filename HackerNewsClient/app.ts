@@ -1,23 +1,56 @@
-const container = document.getElementById('root');
-const ajax = new XMLHttpRequest(); // 다른 데이터로 변경 불가 (상수)
+type Store = {
+  currentPage : number;
+  lastPage : number;
+  feeds : NewsFeed[];
+}
+
+type News = { // 중복되는 type 을 합침
+  id: number;
+  time_ago : string;
+  title: string;
+  url: string;
+  user: string;
+  content: string;
+}
+
+type NewsFeed = News & { // News와 뒤의 3가지 속성이 포함됨. 
+  comments_count : number;
+  points: number;
+  read? : boolean; // optional 한 데이터
+}
+
+type NewsDetail = News & {
+  comments : NewsComment[];
+}
+
+type NewsComment = News & {
+  comments: NewsComment[];
+  level:number;
+}
+
+const container : HTMLElement | null = document.getElementById('root');
+const ajax : XMLHttpRequest = new XMLHttpRequest(); // 다른 데이터로 변경 불가 (상수)
 const content = document.createElement('div');
 const NEWS_URL = 'https://api.hnpwa.com/v0/news/1.json'; // 바뀔 가능성이 있는 변수는 따로 빼주는게 좋음
 const CONTENT_URL = 'https://api.hnpwa.com/v0/item/@id.json'; //값을 확정할 수 없음
-const store = {
+const store : Store = {
     currentPage: 1,
     lastPage: 0,
     feeds: [],
 }
 
 
-function getData(url){
+function getData<AjaxResponse>(url : string) : AjaxResponse {
     ajax.open('GET', url, false);
     ajax.send();
 
+    // 제네릭 : 반환 타입을 명확히 명시하기 위함
+    // > 입력이 n개의 유형일때 출력도 n개의 유형
+    // 함수명과 괄호 사이에 <T>로 명시, 또는 이름으로 명시
     return JSON.parse(ajax.response)
 }
 
-function makeFeeds(feeds){
+function makeFeeds(feeds : NewsFeed[]) : NewsFeed[] {
     for (let i=0; i<feeds.length; i++){
         feeds[i].read = false;
     }
@@ -26,8 +59,17 @@ function makeFeeds(feeds){
 }
 
 
-function newsFeed(){
-    let newsFeed = store.feeds;
+function updateView(html: string): void{ //리턴이 없을 때 void
+  if (container != null){
+    container.innerHTML = html
+  } else {
+    console.error("최상위 컨테이너가 없어 UI를 진행하지 못합니다.")
+  }
+}
+
+
+function newsFeed(): void{ // 입력은 없음
+    let newsFeed : NewsFeed[] = store.feeds;
     const newsList = [];
     let template = `
     <div class="bg-gray-600 min-h-screen">
@@ -53,22 +95,9 @@ function newsFeed(){
         </div>
     </div>
     `
-    /*                    
-    <div class="container mx-auto p-4">
-        <h1>Hacker News</h1>
-        <ul>
-            {{__news_feed__}}
-        </ul>
-        <div>
-            <a href="#/page/{{__prev_page__}}">이전페이지</a>
-            <a href="#/page/{{__next_page__}}">다음페이지</a>
-        </div>
-    </div>
-    */
-    // margin x - mx / padding - p
     
     if (newsFeed.length == 0){
-        newsFeed = store.feeds = makeFeeds(getData(NEWS_URL));
+        newsFeed = store.feeds = makeFeeds(getData<NewsFeed[]>(NEWS_URL));
     }
 
     store.lastPage = newsFeed.length%10 == 0? newsFeed.length/10:newsFeed.length/10+1
@@ -104,17 +133,17 @@ function newsFeed(){
     */
     
     template = template.replace('{{__news_feed__}}', newsList.join(''))
-    template = template.replace('{{__prev_page__}}', store.currentPage > 1 ? store.currentPage - 1 : 1)
+    template = template.replace('{{__prev_page__}}', String(store.currentPage > 1 ? store.currentPage - 1 : 1))
     template = template.replace('{{__next_page__}}',
-        store.currentPage < store.lastPage ? store.currentPage + 1 : store.lastPage)
+        String(store.currentPage < store.lastPage ? store.currentPage + 1 : store.lastPage))
 
-    container.innerHTML = template
+    updateView(template)
 }
 
 
 function newsDetail(){
     const id = location.hash.substr(7); // 1부터 반환
-    const newsContent = getData(CONTENT_URL.replace('@id', id))
+    const newsContent = getData<NewsDetail>(CONTENT_URL.replace('@id', id))
 
     let template = `
     <div class="bg-gray-600 min-h-screen pb-8">
@@ -151,32 +180,39 @@ function newsDetail(){
         }
     }
 
-    function makeComment(comments, called = 0){
-        const commentString = [];
+    
 
-        for(let i=0 ; i < comments.length; i++){
-            commentString.push(`
-                <div style="padding-left: ${called * 40}px;" class="mt-4">
-                    <div class="text-gray-400">
-                        <i class="fa fa-sort-up mr-2"></i>
-                        <strong>${comments[i].user}</strong> ${comments[i].time_ago}
-                    </div>
-                    <p class="text-gray-700">${comments[i].content}</p>
-                </div>
-            `);
-
-            if (comments[i].comments.length > 0){
-                commentString.push(makeComment(comments[i].comments, called + 1));
-            }
-        }
-
-        return commentString.join("")
-    }
-
-    container.innerHTML = template.replace('{{__comments__}}', makeComment(newsContent.comments));
+    updateView(template.replace('{{__comments__}}', makeComment(newsContent.comments)))
 }
 
-function router(){
+
+function makeComment(comments : NewsComment[]): string{
+  const commentString = [];
+
+  for(let i = 0 ; i < comments.length; i++){
+      const comment: NewsComment = comments[i];
+
+      commentString.push(`
+          <div style="padding-left: ${comment.level * 40}px;" class="mt-4">
+              <div class="text-gray-400">
+                  <i class="fa fa-sort-up mr-2"></i>
+                  <strong>${comment.user}</strong> ${comment.time_ago}
+              </div>
+              <p class="text-gray-700">${comment.content}</p>
+          </div>
+      `);
+
+      if (comment.comments.length > 0){
+          commentString.push(makeComment(comment.comments));
+      }
+  }
+
+  return commentString.join("")
+}
+
+
+
+function router(): void {
     const routePath = location.hash;
 
     if (routePath == ''){
