@@ -113,3 +113,8 @@ const g = gen();
 g.next();
 g.next();
 g.next();
+
+//비동기함수
+async function myTask(){
+  
+}
