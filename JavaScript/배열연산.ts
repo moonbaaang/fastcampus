@@ -93,4 +93,23 @@ const someObject: SomeObject = someObjects.reduce(
   {}
 );
 // reduce함수 > 객체를 모두 합쳐 하나의 객체로 만들 수 있음
+// a와 b를 펼쳐 하나의 객체로 만든 후 다시 재개하여 최종적으로 하나의 객체로 만듬
+
 console.log(someObject)
+
+
+function sumNumbers() : number {
+  return Array.from(arguments).reduce((a:number, b:number)=> a+b, 0);
+}
+// Array.from를 지우면 실행 불가능, arguments > 유사 배열 > 배열이 갖고 있는 도구는 메소드로 갖고있지 않음
+// Array.from 은 유사배열을 배열로 변경해주는 메소드임
+
+console.log(sumNumbers(10, 20, 30, 40, 50));
+
+// 아래와 같은 방법을 사용하는것이 바람직함 (가변인자를 명시해줌)
+ 
+function sumNumbersForTypeScript(...args: number[]): number {
+  return args.reduce((a:number, b:number)=> a+b, 0);
+}
+
+console.log(sumNumbersForTypeScript(10,20,30,40,50));

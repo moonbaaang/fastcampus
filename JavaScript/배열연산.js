@@ -6,6 +6,8 @@ const books = [
   "헨리 8세",
 ];
 
+// 배열의 연산 종류 > 순회 (forEach), map, filter (객체.키.include()), reduce 
+
 books.forEach((book, idx, books) => {
   console.log(book, idx);
 });
@@ -63,3 +65,17 @@ const someNumbers = [10, 5, 3, 14, 56];
 const sumNumber = someNumbers.reduce((a, b) => a+b, 0);
 
 console.log(sumNumber)
+
+
+// reduce 함수
+const someObjects = [
+  {border: "none"},
+  {fontSize: 24},
+  {className: "box sm-box"}
+];
+
+const someObject = someObjects.reduce(
+  (a, b) => ({ ...a, ...b}),
+  {}
+);
+console.log(someObject)
